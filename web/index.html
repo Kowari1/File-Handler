@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Devices</title>
+</head>
+<body>
+
+<h2>Search by Unit GUID</h2>
+<input type="text" id="guid" placeholder="Enter unit_guid">
+<button onclick="search()">Search</button>
+
+<h3>Devices</h3>
+<div id="result"></div>
+
+<br>
+<button id="prevBtn" onclick="prevPage()">Prev</button>
+<button id="nextBtn" onclick="nextPage()">Next</button>
+
+<script>
+let page = 1;
+let limit = 10;
+let total = 0;
+let currentGuid = "";
+
+function loadDevices() {
+    const guid = document.getElementById("guid").value.trim();
+
+    let url = "";
+
+    if (guid) {
+        url = `/devices/${guid}?page=${page}&limit=${limit}`;
+    } else {
+        url = `/devices?page=${page}&limit=${limit}`;
+    }
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            total = data.total || 0;
+            renderTable(data);
+        })
+        .catch(err => {
+            console.error("Fetch error:", err);
+        });
+}
+
+function renderTable(response) {
+    const container = document.getElementById("result");
+
+    if (!response.data || response.data.length === 0) {
+        container.innerHTML = "<p>No data</p>";
+        return;
+    }
+
+    let html = "<table border='1' cellpadding='5'><tr>";
+
+    Object.keys(response.data[0]).forEach(key => {
+        html += `<th>${key}</th>`;
+    });
+
+    html += "</tr>";
+
+    response.data.forEach(row => {
+        html += "<tr>";
+        Object.values(row).forEach(value => {
+            html += `<td>${value}</td>`;
+        });
+        html += "</tr>";
+    });
+
+    html += "</table>";
+
+    html += `<p>Page: ${response.page}</p>`;
+    html += `<p>Total: ${response.total}</p>`;
+
+    container.innerHTML = html;
+}
+
+function updateButtons() {
+    document.getElementById("prevBtn").disabled = page <= 1;
+    document.getElementById("nextBtn").disabled = page * limit >= total;
+}
+
+function nextPage() {
+    if (page * limit >= total) return;
+    page++;
+    loadDevices();
+}
+
+function prevPage() {
+    if (page <= 1) return;
+    page--;
+    loadDevices();
+}
+
+function search() {
+    currentGuid = document.getElementById("guid").value.trim();
+    page = 1;
+    loadDevices();
+}
+
+loadDevices();
+</script>
+
+</body>
+</html>
